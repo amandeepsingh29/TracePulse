@@ -140,7 +140,3 @@ TracePulse uses **raw sockets** (not `requests`) to measure each phase of the HT
 Data is stored in a local **SQLite** database (`~/.tracepulse/traces.db`) for history, trends, and regression analysis.
 
 ---
-
-## License
-
-MIT
