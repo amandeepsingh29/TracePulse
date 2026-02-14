@@ -18,7 +18,7 @@
 ## Installation
 
 ```bash
-cd pulse
+cd tracepulse
 pip install -e .
 ```
 
