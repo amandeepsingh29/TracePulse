@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TracePulse — API Latency Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <h1><span class="logo-icon">⚡</span> TracePulse</h1>
+            <p class="subtitle">API Latency Analyzer</p>
+            <div class="header-actions">
+                <button class="btn-icon" onclick="toggleTheme()" title="Toggle theme" id="theme-toggle">🌙</button>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- Trace Input -->
+        <section class="trace-input card">
+            <div class="section-header">
+                <h2>Trace an API</h2>
+                <div class="input-actions">
+                    <button class="btn-secondary" onclick="toggleCurlModal()">📋 cURL Import</button>
+                    <button class="btn-secondary" onclick="togglePresetsPanel()">⭐ Presets</button>
+                </div>
+            </div>
+            <div class="input-row">
+                <select id="method-select">
+                    <option value="GET">GET</option>
+                    <option value="POST">POST</option>
+                    <option value="PUT">PUT</option>
+                    <option value="DELETE">DELETE</option>
+                    <option value="PATCH">PATCH</option>
+                    <option value="HEAD">HEAD</option>
+                </select>
+                <input type="text" id="url-input" placeholder="https://api.example.com/endpoint" />
+                <button id="trace-btn" onclick="runTrace()">
+                    <span id="trace-btn-text">Trace</span>
+                    <span id="trace-spinner" class="spinner hidden"></span>
+                </button>
+            </div>
+
+            <!-- Expandable: Headers, Body, Auth -->
+            <details class="trace-advanced">
+                <summary>Headers, Body & Auth</summary>
+                <div class="advanced-grid">
+                    <div class="advanced-field">
+                        <label>Headers <span class="hint">(JSON object)</span></label>
+                        <textarea id="headers-input" rows="3" placeholder='{"Authorization": "Bearer token", "Content-Type": "application/json"}'></textarea>
+                    </div>
+                    <div class="advanced-field">
+                        <label>Request Body</label>
+                        <textarea id="body-input" rows="3" placeholder='{"key": "value"}'></textarea>
+                    </div>
+                </div>
+            </details>
+        </section>
+
+        <!-- cURL Import Modal -->
+        <section id="curl-modal" class="card hidden">
+            <div class="section-header">
+                <h2>📋 Import cURL Command</h2>
+                <button class="btn-secondary" onclick="toggleCurlModal()">✕ Close</button>
+            </div>
+            <textarea id="curl-input" rows="5" placeholder="curl -X GET https://api.github.com -H 'Accept: application/json'"></textarea>
+            <button class="btn-primary" onclick="importCurl()" style="margin-top: 0.5rem">Import & Trace</button>
+        </section>
+
+        <!-- Presets Panel -->
+        <section id="presets-panel" class="card hidden">
+            <div class="section-header">
+                <h2>⭐ Saved Presets</h2>
+                <button class="btn-secondary" onclick="togglePresetsPanel()">✕ Close</button>
+            </div>
+            <div class="preset-save-row">
+                <input type="text" id="preset-name-input" placeholder="Preset name" />
+                <button class="btn-secondary" onclick="saveCurrentAsPreset()">Save Current</button>
+            </div>
+            <div id="presets-list" class="presets-list">
+                <p class="empty-state">No presets saved</p>
+            </div>
+        </section>
+
+        <!-- Live Result -->
+        <section id="result-section" class="card hidden">
+            <div class="result-header">
+                <h2>Trace Result</h2>
+                <div id="result-meta" class="result-meta"></div>
+            </div>
+            <div class="waterfall-chart">
+                <canvas id="waterfallChart"></canvas>
+            </div>
+            <div id="bottleneck-alert" class="bottleneck-alert hidden"></div>
+            <div class="timing-grid" id="timing-grid"></div>
+
+            <!-- Geo Info -->
+            <div id="geo-info" class="geo-info hidden"></div>
+
+            <!-- Response Body Preview -->
+            <details id="body-preview-section" class="body-preview hidden">
+                <summary>Response Body Preview</summary>
+                <pre id="body-preview-content" class="body-preview-content"></pre>
+            </details>
+        </section>
+
+        <!-- Stats + Percentiles Section -->
+        <section id="stats-section" class="card hidden">
+            <div class="section-header">
+                <h2 id="stats-title">Statistics</h2>
+                <div class="export-actions">
+                    <button class="btn-secondary" onclick="exportData('csv')">📄 CSV</button>
+                    <button class="btn-secondary" onclick="exportData('json')">📦 JSON</button>
+                    <button class="btn-secondary" onclick="exportData('html')">📊 HTML Report</button>
+                </div>
+            </div>
+            <div id="stats-grid" class="stats-grid"></div>
+            <div id="percentile-grid" class="percentile-grid"></div>
+        </section>
+
+        <!-- History Section -->
+        <section class="card">
+            <div class="section-header">
+                <h2>Traced Endpoints</h2>
+                <button class="btn-secondary" onclick="loadUrls()">↻ Refresh</button>
+            </div>
+            <div id="url-list" class="url-list">
+                <p class="empty-state">Loading...</p>
+            </div>
+        </section>
+
+        <!-- Comparison Section -->
+        <section id="compare-section" class="card hidden">
+            <div class="section-header">
+                <h2>Compare Endpoints</h2>
+                <button class="btn-secondary" onclick="document.getElementById('compare-section').classList.add('hidden')">✕ Close</button>
+            </div>
+            <div class="compare-input-row">
+                <textarea id="compare-urls" rows="3" placeholder="Enter URLs to compare (one per line)&#10;https://api.github.com&#10;https://httpbin.org/get"></textarea>
+                <button class="btn-primary" onclick="runComparison()">Compare</button>
+            </div>
+            <div class="compare-chart-container">
+                <canvas id="compareChart"></canvas>
+            </div>
+            <div id="compare-results" class="compare-results"></div>
+        </section>
+
+        <!-- Trend Chart Section -->
+        <section id="trend-section" class="card hidden">
+            <div class="section-header">
+                <h2 id="trend-title">Latency Trend</h2>
+                <button class="btn-secondary" onclick="document.getElementById('compare-section').classList.remove('hidden')">📊 Compare URLs</button>
+            </div>
+            <div class="trend-chart">
+                <canvas id="trendChart"></canvas>
+            </div>
+        </section>
+
+        <!-- Regressions Section -->
+        <section id="regression-section" class="card hidden">
+            <h2>Regression Detection</h2>
+            <div id="regression-list"></div>
+        </section>
+
+        <!-- Shareable Link -->
+        <div id="share-toast" class="share-toast hidden">
+            <span id="share-toast-text">Link copied!</span>
+        </div>
+    </main>
+
+    <footer>
+        <p>TracePulse v1.0.0 — Lightweight API Latency Analyzer</p>
+    </footer>
+
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,49 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tracepulse"
+version = "1.0.0"
+description = "Lightweight API latency analyzer with granular timing breakdown"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "MIT"}
+authors = [
+    {name = "Amandeep Singh"},
+]
+keywords = ["api", "latency", "tracing", "performance", "http", "dns", "tls"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Internet :: WWW/HTTP",
+    "Topic :: System :: Networking :: Monitoring",
+]
+dependencies = [
+    "click>=8.0",
+    "rich>=13.0",
+    "flask>=3.0",
+    "requests>=2.28",
+]
+
+[project.urls]
+Homepage = "https://github.com/amandeepsingh29/tracepulse"
+Repository = "https://github.com/amandeepsingh29/tracepulse"
+Issues = "https://github.com/amandeepsingh29/tracepulse/issues"
+
+[project.scripts]
+tracepulse = "tracepulse.cli:cli"
+
+[tool.setuptools.packages.find]
+include = ["tracepulse*"]
+
+[tool.setuptools.package-data]
+tracepulse = ["dashboard/templates/*.html", "dashboard/static/*.css", "dashboard/static/*.js"]
